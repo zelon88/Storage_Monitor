@@ -1,14 +1,13 @@
 'File Name: Storage_Monitor.vbs
-'Version: v1.7, 4/23/2019, Fix lots of bugs. Redesign entire script.
+'Version: v1.8, 4/23/2019, Fix issues with string comparison of new/old cache contents.
 'Author: Justin Grimes, 5/31/2018
 
 Option Explicit
 Dim inputCache, outputCache, objShell, Result, DiskSet, Disk, oFSO, mailFile, oCacheHandle, iCacheHandle, mFileHandle, Device, strComputerName, outCacheData, inCacheData, inCacheString, _
-inCacheArray, diskCacheData, outCacheString, counter, strLogFilePath, strSafeDate, strSafeTime, strDateTime, strLogFileName, homeFolder, objLogFile, Alert, pre, fireEmail, mailHandle, outCacheNew, _
-outCacheBuilt, toEmail, fromEmail, companyAbbreviation, companyName
+inCacheArray, diskCacheData, outCacheString, strLogFilePath, strSafeDate, strSafeTime, strDateTime, strLogFileName, homeFolder, objLogFile, Alert, pre, fireEmail, mailHandle, outCacheNew, _
+outCacheBuilt, toEmail, fromEmail, companyAbbreviation, companyName, strDiff
 
 'Define variables, file paths, & basic objects for the session.
-counter = 0
 fireEmail = True
 diskCacheData = Alert = pre = Device = outCacheBuilt = ""
 Set objShell = Wscript.CreateObject("WScript.Shell")
@@ -17,11 +16,11 @@ mailFile = homeFolder & "\Storage_Monitor_Warning.mail"
 inputCache = homeFolder & "\diskCache0.dat"
 outputCache = homeFolder & "\diskCache1.dat"
 strComputerName = objShell.ExpandEnvironmentStrings("%COMPUTERNAME%")
-strLogFilePath = "\\server\Logs"
-toEmail = "IT@company.com"
-fromEmail = "Server@company.com"
-companyAbbreviation = "Company"
-companyName = "Company Inc."
+strLogFilePath = "\\tfiserver\Logs"
+toEmail = "IT@tfpm.com"
+fromEmail = "TFIServer@tfpm.com"
+companyAbbreviation = "TFPM"
+companyName = "Tru Form"
 
 'Set some handles for disk objects (from WMI) and file system objects.
 Set DiskSet = GetObject("winmgmts:{impersonationLevel=impersonate}").ExecQuery ("select * from Win32_LogicalDisk")
@@ -49,7 +48,7 @@ strSafeTime = Right("0" & Hour(Now), 2) & Right("0" & Minute(Now), 2) & Right("0
 strDateTime = strSafeDate & "-" & strSafeTime
 strLogFileName = strLogFilePath & "\" & strComputerName & "-" & strDateTime & "-storage_monitor.txt"
 
-'A funciton for running SendMail.
+'A function for running SendMail.
 Function SendEmail() 
  objShell.run "\\TFISERVER\AutomationScripts\Storage_Monitor\sendmail.exe " & mailFile 
 End Function
@@ -109,10 +108,10 @@ Else
   inCacheString = ""
 End If
 inCacheData.Close
-counter = counter + 1
 
 'Compare the contents of the two cache files.
-If (strComp(Trim(inCacheString), Trim(Device), 1) = 0) Then
+strDiff = Replace(inCacheString, Device, "", 1, 1)
+If (len(strDiff) > 0) Then
   fireEmail = False
 End If
 
@@ -150,3 +149,4 @@ If (fireEmail = True) Then
   SendEmail
   CreateLog("The storage configuration on " & strComputerName & " has changed on " & strDateTime & "!" & vbNewLine & vbNewLine & "DRIVES: " & Device)
 End If
+
