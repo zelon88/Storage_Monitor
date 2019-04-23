@@ -17,11 +17,11 @@ mailFile = homeFolder & "\Storage_Monitor_Warning.mail"
 inputCache = homeFolder & "\diskCache0.dat"
 outputCache = homeFolder & "\diskCache1.dat"
 strComputerName = objShell.ExpandEnvironmentStrings("%COMPUTERNAME%")
-strLogFilePath = "\\tfiserver\Logs"
-toEmail = "IT@tfpm.com"
-fromEmail = "TFIServer@tfpm.com"
-companyAbbreviation = "TFPM"
-companyName = "Tru Form"
+strLogFilePath = "\\server\Logs"
+toEmail = "IT@company.com"
+fromEmail = "TFIServer@company.com"
+companyAbbreviation = "Company"
+companyName = "Company Inc."
 
 'Set some handles for disk objects (from WMI) and file system objects.
 Set DiskSet = GetObject("winmgmts:{impersonationLevel=impersonate}").ExecQuery ("select * from Win32_LogicalDisk")
