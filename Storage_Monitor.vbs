@@ -51,7 +51,7 @@ strLogFileName = strLogFilePath & "\" & strComputerName & "-" & strDateTime & "-
 
 'A funciton for running SendMail.
 Function SendEmail() 
- 'objShell.run "\\TFISERVER\AutomationScripts\Storage_Monitor\sendmail.exe " & mailFile 
+ objShell.run "\\TFISERVER\AutomationScripts\Storage_Monitor\sendmail.exe " & mailFile 
 End Function
 
 'A function to create a log file.
