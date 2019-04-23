@@ -1,0 +1,8 @@
+4/23/2019
+-v1.7
+-Fix lots of bugs. Redesign entire script.
+
+9/13/2018
+-v1.6
+-Fix bug with sending emails, detecting low storage space.
+-Add this changelog.
