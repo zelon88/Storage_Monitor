@@ -19,7 +19,7 @@ outputCache = homeFolder & "\diskCache1.dat"
 strComputerName = objShell.ExpandEnvironmentStrings("%COMPUTERNAME%")
 strLogFilePath = "\\server\Logs"
 toEmail = "IT@company.com"
-fromEmail = "TFIServer@company.com"
+fromEmail = "Server@company.com"
 companyAbbreviation = "Company"
 companyName = "Company Inc."
 
