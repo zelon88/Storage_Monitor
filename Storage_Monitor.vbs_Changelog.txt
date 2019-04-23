@@ -1,4 +1,8 @@
 4/23/2019
+-v1.8.
+-Fix issues with string comparison of new/old cache contents.
+
+4/23/2019
 -v1.7
 -Fix lots of bugs. Redesign entire script.
 
