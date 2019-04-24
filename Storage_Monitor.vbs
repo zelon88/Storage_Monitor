@@ -4,7 +4,7 @@
 
 Option Explicit
 Dim inputCache, outputCache, objShell, Result, DiskSet, Disk, oFSO, mailFile, oCacheHandle, iCacheHandle, mFileHandle, Device, strComputerName, outCacheData, inCacheData, inCacheString, _
-outCacheString, strLogFilePath, strSafeDate, strSafeTime, strDateTime, strLogFileName, homeFolder, objLogFile, Alert, pre, fireEmail, mailHandle, outCacheNew, _
+outCacheString, strLogFilePath, strSafeDate, strSafeTime, strDateTime, strLogFileName, homeFolder, objLogFile, Alert, pre, fireEmail, outCacheNew, _
 toEmail, fromEmail, companyAbbreviation, companyName, strDiff, re, installPath
 
 'Define variables & basic objects for the session.
