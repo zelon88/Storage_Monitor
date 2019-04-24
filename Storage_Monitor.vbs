@@ -1,11 +1,11 @@
 'File Name: Storage_Monitor.vbs
-'Version: v1.9, 4/23/2019, Fix bugs with string comparison.
+'Version: v2.0, 4/24/2019, Fix bugs with running as a SYSTEM task.
 'Author: Justin Grimes, 5/31/2018
 
 Option Explicit
 Dim inputCache, outputCache, objShell, Result, DiskSet, Disk, oFSO, mailFile, oCacheHandle, iCacheHandle, mFileHandle, Device, strComputerName, outCacheData, inCacheData, inCacheString, _
 outCacheString, strLogFilePath, strSafeDate, strSafeTime, strDateTime, strLogFileName, homeFolder, objLogFile, Alert, pre, fireEmail, outCacheNew, _
-toEmail, fromEmail, companyAbbreviation, companyName, strDiff, re, installPath
+toEmail, fromEmail, companyAbbreviation, companyName, strDiff, re, installPath, strUserName, strSessionName, tempFolder
 
 'Define variables & basic objects for the session.
 fireEmail = False
@@ -14,30 +14,36 @@ Set objShell = Wscript.CreateObject("WScript.Shell")
 Set re = New RegExp
 re.Pattern = "\s+"
 re.Global  = True
-homeFolder = objShell.ExpandEnvironmentStrings("%USERPROFILE%")
-'The following variables are required to create a logfile in the network Logs directory.
+'Set some handles for disk objects (from WMI) and file system objects.
+Set DiskSet = GetObject("winmgmts:{impersonationLevel=impersonate}").ExecQuery ("select * from Win32_LogicalDisk")
+Set oFSO = CreateObject("Scripting.FileSystemObject")
+Const TemporaryFolder = 2
+Set tempfolder = oFSO.GetSpecialFolder(TemporaryFolder)
+strSessionName = objShell.ExpandEnvironmentStrings("%SESSIONNAME%")
+strUserName = objShell.ExpandEnvironmentStrings("%USERNAME%")
 strComputerName = objShell.ExpandEnvironmentStrings("%COMPUTERNAME%")
+'Set the initial date information for logfile creation.
 strSafeDate = DatePart("yyyy",Date) & Right("0" & DatePart("m",Date), 2) & Right("0" & DatePart("d",Date), 2)
 strSafeTime = Right("0" & Hour(Now), 2) & Right("0" & Minute(Now), 2) & Right("0" & Second(Now), 2)
 strDateTime = strSafeDate & "-" & strSafeTime
-strLogFileName = strLogFilePath & "\" & strComputerName & "-" & strDateTime & "-storage_monitor.txt"
+'Determine if the script is being run as SYSTEM or a user and set the homeFolder to a writable location.
+homeFolder = objShell.ExpandEnvironmentStrings("%USERPROFILE%")
+If (strUserName = "SYSTEM" Or strSessionName <> "Console") Then
+  homeFolder = tempFolder
+End If
 '----------
 'The variables within this comment block should be adjusted to your environment.
 installPath = "\\Server\AutomationScripts\Storage_Monitor"
 mailFile = homeFolder & "\Storage_Monitor_Warning.mail"
 inputCache = homeFolder & "\diskCache0.dat"
 outputCache = homeFolder & "\diskCache1.dat"
-strComputerName = objShell.ExpandEnvironmentStrings("%COMPUTERNAME%")
 strLogFilePath = "\\Server\Logs"
-toEmail = "IT@company.com"
-fromEmail = "Server@company.com"
+toEmail = "IT@Company.com"
+fromEmail = "Server@Company.com"
 companyAbbreviation = "Company"
 companyName = "Company Inc."
+strLogFileName = strLogFilePath & "\" & strComputerName & "-" & strDateTime & "-storage_monitor.txt"
 '----------
-
-'Set some handles for disk objects (from WMI) and file system objects.
-Set DiskSet = GetObject("winmgmts:{impersonationLevel=impersonate}").ExecQuery ("select * from Win32_LogicalDisk")
-Set oFSO = CreateObject("Scripting.FileSystemObject")
 
 'Verify that an output cache exists and create one if it does not.
 Set oCacheHandle = oFSO.CreateTextFile(outputCache, True, False)
@@ -56,12 +62,13 @@ End Function
 
 'A function to create a log file.
 Function CreateLog(strEventInfo)
+  'Reset the logfile information so existing logfiles are not overwritten.
   strSafeDate = DatePart("yyyy",Date) & Right("0" & DatePart("m",Date), 2) & Right("0" & DatePart("d",Date), 2)
   strSafeTime = Right("0" & Hour(Now), 2) & Right("0" & Minute(Now), 2) & Right("0" & Second(Now), 2)
   strDateTime = strSafeDate & "-" & strSafeTime
   strLogFileName = strLogFilePath & "\" & strComputerName & "-" & strDateTime & "-storage_monitor.txt"
   If Not (strEventInfo = "") Then
-    Set objLogFile = oFSO.CreateTextFile(strLogFileName, False, False)
+    Set objLogFile = oFSO.CreateTextFile(strLogFileName, True, False)
     objLogFile.WriteLine(strEventInfo)
     objLogFile.Close
   End If
@@ -118,12 +125,12 @@ If (strDiff <> 0) Then
   fireEmail = False
 End If
 
-'Regenerate the input cache file with data from the output cache file.
-'Retrieve the contents of the input cache file.
+'Retrieve the contents of the output cache file.
 Set outCacheData = oFSO.OpenTextFile(outputCache, 1)
 outCacheNew = outCacheData.ReadAll
 outCacheData.Close
 
+'Regenerate the input cache file with data from the output cache file.
 Set inCacheData = oFSO.CreateTextFile(inputCache, True, False)
 inCacheData.Write outCacheNew
 inCacheData.Close
