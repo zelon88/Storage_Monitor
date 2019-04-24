@@ -1,5 +1,5 @@
 'File Name: Storage_Monitor.vbs
-'Version: v2.0, 4/24/2019, Fix bugs with running as a SYSTEM task.
+'Version: v2.1, 4/24/2019, Fix bugs with running as a SYSTEM task.
 'Author: Justin Grimes, 5/31/2018
 
 Option Explicit
@@ -9,7 +9,9 @@ toEmail, fromEmail, companyAbbreviation, companyName, strDiff, re, installPath, 
 
 'Define variables & basic objects for the session.
 fireEmail = False
-Alert = pre = Device = ""
+Alert = "" 
+pre = "" 
+Device = ""
 Set objShell = Wscript.CreateObject("WScript.Shell")
 Set re = New RegExp
 re.Pattern = "\s+"
@@ -76,6 +78,11 @@ End Function
 
 'Check each disk for available space.
 For Each Disk In DiskSet
+  
+  'Make sure the data we're working with is of a valid type.
+  If (Disk.Name = False) Then
+    Continue
+  End If
 
   'Retrieve the drive letter of each device.
   If (Device <> "") Then
@@ -96,7 +103,6 @@ For Each Disk In DiskSet
   If (Alert <> "") Then
     pre = ","
   End If
-
   'Set the threshold for amount of disk space remaining before a warning email is sent.
   If (Result <= 15) Then
     Alert = Alert & pre & Disk.Name
@@ -136,7 +142,7 @@ inCacheData.Write outCacheNew
 inCacheData.Close
 
 'Send one email if a storage device is low on space (after all loops have completed).
-If (len(Alert) >= 1) Then
+If (len(Alert) >= 1 And Alert <> False) Then
   Set mFileHandle = oFSO.CreateTextFile(mailFile, True, False)
   mFileHandle.Write "To: "&toEmail&vbNewLine&"From: "&fromEmail&vbNewLine&"Subject: "&companyAbbreviation&" Low Storage Space Warning!!!"&vbNewLine& _
    "This is an automatic email from the "&companyName&" Network to notify you that a storage device is almost full and requires attention."&vbNewLine&vbNewLine& _
