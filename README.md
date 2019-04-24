@@ -10,13 +10,13 @@ ORIGINAL VERSION DATE: 5/31/2018
 
 CURRENT VERSION DATE: 4/23/2019
 
-VERSION: v1.7 - Fix lots of bugs. Redesign entire script.
+VERSION: v1.9 - Fix bugs with string comparison.
 
 DESCRIPTION: 
 A simple script for monitoring storage devices for added/removed volumes and and adequate disk space.
 
 PURPOSE: 
-To monitor TFPM storage devices for changes and/or disk space issues that need to be manually addressed.
+To monitor company storage devices for changes and/or disk space issues that need to be manually addressed.
 
 INSTALLATION INSTRUCTIONS: 
 1. Copy the entire "Storage_Monitor" folder into the "AutomationScripts" folder on SERVER (or any other network accesbible location).
