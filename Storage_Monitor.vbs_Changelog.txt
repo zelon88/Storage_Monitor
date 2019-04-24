@@ -1,4 +1,8 @@
 4/23/2019
+-v1.9.
+-Fix bugs with string comparison.
+
+4/23/2019
 -v1.8.
 -Fix issues with string comparison of new/old cache contents.
 
