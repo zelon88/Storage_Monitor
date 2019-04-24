@@ -1,37 +1,45 @@
 'File Name: Storage_Monitor.vbs
-'Version: v1.8, 4/23/2019, Fix issues with string comparison of new/old cache contents.
+'Version: v1.9, 4/23/2019, Fix bugs with string comparison.
 'Author: Justin Grimes, 5/31/2018
 
 Option Explicit
 Dim inputCache, outputCache, objShell, Result, DiskSet, Disk, oFSO, mailFile, oCacheHandle, iCacheHandle, mFileHandle, Device, strComputerName, outCacheData, inCacheData, inCacheString, _
-inCacheArray, diskCacheData, outCacheString, strLogFilePath, strSafeDate, strSafeTime, strDateTime, strLogFileName, homeFolder, objLogFile, Alert, pre, fireEmail, mailHandle, outCacheNew, _
-outCacheBuilt, toEmail, fromEmail, companyAbbreviation, companyName, strDiff
+outCacheString, strLogFilePath, strSafeDate, strSafeTime, strDateTime, strLogFileName, homeFolder, objLogFile, Alert, pre, fireEmail, mailHandle, outCacheNew, _
+toEmail, fromEmail, companyAbbreviation, companyName, strDiff, re, installPath
 
-'Define variables, file paths, & basic objects for the session.
-fireEmail = True
-diskCacheData = Alert = pre = Device = outCacheBuilt = ""
+'Define variables & basic objects for the session.
+fireEmail = False
+Alert = pre = Device = ""
 Set objShell = Wscript.CreateObject("WScript.Shell")
+Set re = New RegExp
+re.Pattern = "\s+"
+re.Global  = True
 homeFolder = objShell.ExpandEnvironmentStrings("%USERPROFILE%")
+'The following variables are required to create a logfile in the network Logs directory.
+strComputerName = objShell.ExpandEnvironmentStrings("%COMPUTERNAME%")
+strSafeDate = DatePart("yyyy",Date) & Right("0" & DatePart("m",Date), 2) & Right("0" & DatePart("d",Date), 2)
+strSafeTime = Right("0" & Hour(Now), 2) & Right("0" & Minute(Now), 2) & Right("0" & Second(Now), 2)
+strDateTime = strSafeDate & "-" & strSafeTime
+strLogFileName = strLogFilePath & "\" & strComputerName & "-" & strDateTime & "-storage_monitor.txt"
+'----------
+'The variables within this comment block should be adjusted to your environment.
+installPath = "\\Server\AutomationScripts\Storage_Monitor"
 mailFile = homeFolder & "\Storage_Monitor_Warning.mail"
 inputCache = homeFolder & "\diskCache0.dat"
 outputCache = homeFolder & "\diskCache1.dat"
 strComputerName = objShell.ExpandEnvironmentStrings("%COMPUTERNAME%")
-strLogFilePath = "\\tfiserver\Logs"
-toEmail = "IT@tfpm.com"
-fromEmail = "TFIServer@tfpm.com"
-companyAbbreviation = "TFPM"
-companyName = "Tru Form"
+strLogFilePath = "\\Server\Logs"
+toEmail = "IT@company.com"
+fromEmail = "Server@company.com"
+companyAbbreviation = "Company"
+companyName = "Company Inc."
+'----------
 
 'Set some handles for disk objects (from WMI) and file system objects.
 Set DiskSet = GetObject("winmgmts:{impersonationLevel=impersonate}").ExecQuery ("select * from Win32_LogicalDisk")
 Set oFSO = CreateObject("Scripting.FileSystemObject")
 
-'Verify that a mail file exists and create one if it does not.
-If Not (oFSO.FileExists(mailFile)) Then
-  Set mailHandle = oFSO.CreateTextFile(mailFile, True, False)
-End If
-
-'Sets a handle for writing to the output cache.
+'Verify that an output cache exists and create one if it does not.
 Set oCacheHandle = oFSO.CreateTextFile(outputCache, True, False)
 oCacheHandle.Close
 
@@ -41,16 +49,9 @@ If Not (oFSO.FileExists(inputCache)) Then
   Set iCacheHandle = oFSO.CreateTextFile(inputCache, True, False)
 End If
 
-'The following variables are required to create a logfile in the network Logs directory.
-strComputerName = objShell.ExpandEnvironmentStrings("%COMPUTERNAME%")
-strSafeDate = DatePart("yyyy",Date) & Right("0" & DatePart("m",Date), 2) & Right("0" & DatePart("d",Date), 2)
-strSafeTime = Right("0" & Hour(Now), 2) & Right("0" & Minute(Now), 2) & Right("0" & Second(Now), 2)
-strDateTime = strSafeDate & "-" & strSafeTime
-strLogFileName = strLogFilePath & "\" & strComputerName & "-" & strDateTime & "-storage_monitor.txt"
-
 'A function for running SendMail.
 Function SendEmail() 
- objShell.run "\\TFISERVER\AutomationScripts\Storage_Monitor\sendmail.exe " & mailFile 
+ objShell.run installPath & "\sendmail.exe " & mailFile 
 End Function
 
 'A function to create a log file.
@@ -110,8 +111,10 @@ End If
 inCacheData.Close
 
 'Compare the contents of the two cache files.
-strDiff = Replace(inCacheString, Device, "", 1, 1)
-If (len(strDiff) > 0) Then
+Device = Trim(re.Replace(Device, ""))
+inCacheString = Trim(re.Replace(inCacheString, ""))
+strDiff = StrComp(Device, inCacheString, vbTextCompare)
+If (strDiff <> 0) Then
   fireEmail = False
 End If
 
@@ -149,4 +152,3 @@ If (fireEmail = True) Then
   SendEmail
   CreateLog("The storage configuration on " & strComputerName & " has changed on " & strDateTime & "!" & vbNewLine & vbNewLine & "DRIVES: " & Device)
 End If
-
