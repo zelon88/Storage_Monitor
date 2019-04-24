@@ -8,9 +8,9 @@ AUTHOR: Justin Grimes
 
 ORIGINAL VERSION DATE: 5/31/2018
 
-CURRENT VERSION DATE: 4/23/2019
+CURRENT VERSION DATE: 4/24/2019
 
-VERSION: v1.9 - Fix bugs with string comparison.
+VERSION: v2.1 - Fix more bugs running as a SYSTEM task.
 
 DESCRIPTION: 
 A simple script for monitoring storage devices for added/removed volumes and and adequate disk space.

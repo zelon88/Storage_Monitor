@@ -1,3 +1,11 @@
+4/24/2019
+-v2.1.
+-Fix more bugs running as a SYSTEM task.
+
+4/24/2019
+-v2.0.
+-Fix bugs with running as a SYSTEM task.
+
 4/23/2019
 -v1.9.
 -Fix bugs with string comparison.
