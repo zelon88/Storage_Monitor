@@ -1,17 +1,18 @@
 'File Name: Storage_Monitor.vbs
-'Version: v2.1, 4/24/2019, Fix bugs with running as a SYSTEM task.
+'Version: v2.2, 4/26/2019, Add support for -e argument of exclusions.
 'Author: Justin Grimes, 5/31/2018
 
 Option Explicit
 Dim inputCache, outputCache, objShell, Result, DiskSet, Disk, oFSO, mailFile, oCacheHandle, iCacheHandle, mFileHandle, Device, strComputerName, outCacheData, inCacheData, inCacheString, _
-outCacheString, strLogFilePath, strSafeDate, strSafeTime, strDateTime, strLogFileName, homeFolder, objLogFile, Alert, pre, fireEmail, outCacheNew, _
-toEmail, fromEmail, companyAbbreviation, companyName, strDiff, re, installPath, strUserName, strSessionName, tempFolder
+outCacheString, strLogFilePath, strSafeDate, strSafeTime, strDateTime, strLogFileName, homeFolder, objLogFile, Alert, pre, fireEmail, outCacheNew, strSessionName, tempFolder, _
+multipleExclusions, excludeCheck, i, exclusions, arg, param1, param2, toEmail, fromEmail, companyAbbreviation, companyName, strDiff, re, installPath, strUserName, exitFlag
 
 'Define variables & basic objects for the session.
 fireEmail = False
 Alert = "" 
 pre = "" 
 Device = ""
+exclusions = ""
 Set objShell = Wscript.CreateObject("WScript.Shell")
 Set re = New RegExp
 re.Pattern = "\s+"
@@ -19,6 +20,7 @@ re.Global  = True
 'Set some handles for disk objects (from WMI) and file system objects.
 Set DiskSet = GetObject("winmgmts:{impersonationLevel=impersonate}").ExecQuery ("select * from Win32_LogicalDisk")
 Set oFSO = CreateObject("Scripting.FileSystemObject")
+Set arg = WScript.Arguments
 Const TemporaryFolder = 2
 Set tempfolder = oFSO.GetSpecialFolder(TemporaryFolder)
 strSessionName = objShell.ExpandEnvironmentStrings("%SESSIONNAME%")
@@ -46,6 +48,21 @@ companyAbbreviation = "Company"
 companyName = "Company Inc."
 strLogFileName = strLogFilePath & "\" & strComputerName & "-" & strDateTime & "-storage_monitor.txt"
 '----------
+
+'Retrieve the specified arguments.
+If (arg.Count > 1) Then
+  param1 = arg(0)
+  param2 = arg(1)
+End If
+
+'The following code is performed when the -e argument is set to exclude devices.
+  'When using the -e argument you may specify a comma separated list of devices to exclude.
+  'Example: Storage_Montior.vbs -e c,e,f,z
+If (param1 = "-e") Then
+  exclusions = param2
+  multipleExclusions = InStr(1, exclusions, ",", 0)
+  exclusions = Split(exclusions, ",")
+End If
 
 'Verify that an output cache exists and create one if it does not.
 Set oCacheHandle = oFSO.CreateTextFile(outputCache, True, False)
@@ -78,35 +95,49 @@ End Function
 
 'Check each disk for available space.
 For Each Disk In DiskSet
-  
-  'Make sure the data we're working with is of a valid type.
-  If (Disk.Name = False) Then
-    Continue
-  End If
+  'Since VBS doesn't have a decent "Continue" method we need to use a Do While loop instead.
+  Do
+    exitFlag = False
+    
+    'Skip this iteration of the loop if the disk name is in the list of excluded devices.
+    If isArray(exclusions) Then
+      For i = 0 To UBound(exclusions)
+        excludeCheck = InStr(1, LCase(Disk.Name), LCase(exclusions(i)), 0)
+        If (excludeCheck > 0) Then
+          msgbox excludeCheck
+          exitFlag = True
+          Exit For
+        End If
+      Next
+    End If
+    If (exitFlag = True) Then
+      Exit Do
+    End If
 
-  'Retrieve the drive letter of each device.
-  If (Device <> "") Then
-    Device = Device & "," & Disk.Name
-  Else
-    Device = Disk.Name
-  End If
+    'Retrieve the drive letter of each device.
+    If (Device <> "") Then
+      Device = Device & "," & Disk.Name
+    Else
+      Device = Disk.Name
+    End If
 
-  'Retrieve the amount of free space on the disk.
-  Disk.FreeSpace = Disk.FreeSpace/1024
-  Disk.FreeSpace = Disk.FreeSpace/1024
-  Result = Disk.FreeSpace/1024
+    'Retrieve the amount of free space on the disk.
+    Disk.FreeSpace = Disk.FreeSpace/1024
+    Disk.FreeSpace = Disk.FreeSpace/1024
+    Result = Disk.FreeSpace/1024
 
-  'Prepare delimiters for the list of devices that are low on storage.
-  If (Alert = "") Then
-    pre = ""
-  End If
-  If (Alert <> "") Then
-    pre = ","
-  End If
-  'Set the threshold for amount of disk space remaining before a warning email is sent.
-  If (Result <= 15) Then
-    Alert = Alert & pre & Disk.Name
-  End If
+    'Prepare delimiters for the list of devices that are low on storage.
+    If (Alert = "") Then
+      pre = ""
+    End If
+    If (Alert <> "") Then
+      pre = ","
+    End If
+    'Set the threshold for amount of disk space remaining before a warning email is sent.
+    If (Result <= 15) Then
+      Alert = Alert & pre & Disk.Name
+    End If
+  Loop While False
 Next
 
 'Rewrite the output cache.

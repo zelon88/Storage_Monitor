@@ -1,3 +1,8 @@
+4/26/2019
+-v2.2.
+-Add support for -e argument. 
+-The new -e argument supports a comma separated list of drives to skip.
+
 4/24/2019
 -v2.1.
 -Fix more bugs running as a SYSTEM task.
